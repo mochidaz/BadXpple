@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.20)
+add_executable(badxpple "src/main.cpp")
+target_link_libraries(badxpple X11)
+find_package(OpenCV REQUIRED)
+target_include_directories(badxpple PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(badxpple ${OpenCV_LIBS})
