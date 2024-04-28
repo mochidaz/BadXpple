@@ -14,7 +14,7 @@
 #include "audio.cpp"
 
 // Bigger scale
-//void drawPixels(Display* display, int screen, std::vector<cv::Mat>& images) {
+//void draw_pixels(Display* display, int screen, std::vector<cv::Mat>& images) {
 //    Window window = XCreateSimpleWindow(display, RootWindow(display, screen),
 //                                        0, 0, images[0].cols * 2, images[0].rows * 2, 0, 0, BlackPixel(display, screen));
 //    XMapWindow(display, window);
@@ -41,7 +41,7 @@
 //    }
 //}
 
-void drawPixels(Display* display, int screen, std::vector<cv::Mat>& images) {
+void draw_pixels(Display* display, int screen, std::vector<cv::Mat>& images) {
     Window window = XCreateSimpleWindow(display, RootWindow(display, screen),
                                         0, 0, images[0].cols, images[0].rows, 0, 0, BlackPixel(display, screen));
     XMapWindow(display, window);
@@ -103,7 +103,7 @@ int main() {
 
     std::thread audio_thread(play_audio, "./resources/badapple.wav");
 
-    drawPixels(display, screen, images);
+    draw_pixels(display, screen, images);
 
     audio_thread.join();
 
