@@ -9,16 +9,49 @@
 #include <filesystem>
 #include <iostream>
 #include <vector>
+#include <thread>
+
+#include "audio.cpp"
+
+// Bigger scale
+//void drawPixels(Display* display, int screen, std::vector<cv::Mat>& images) {
+//    Window window = XCreateSimpleWindow(display, RootWindow(display, screen),
+//                                        0, 0, images[0].cols * 2, images[0].rows * 2, 0, 0, BlackPixel(display, screen));
+//    XMapWindow(display, window);
+//
+//    GC gc = XCreateGC(display, window, 0, nullptr);
+//
+//    XSetForeground(display, gc, WhitePixel(display, screen));
+//
+//    for (int image = 0; image < images.size(); image++) {
+//
+//        for (int y = 0; y < images[image].rows; ++y) {
+//            for (int x = 0; x < images[image].cols; ++x) {
+//                if (images[image].at<unsigned char>(y, x) > 0) {
+//                    XDrawPoint(display, window, gc, x * 2, y * 2);
+//                    XDrawPoint(display, window, gc, x * 2 + 1, y * 2);
+//                    XDrawPoint(display, window, gc, x * 2, y * 2 + 1);
+//                    XDrawPoint(display, window, gc, x * 2 + 1, y * 2 + 1);
+//                }
+//            }
+//        }
+//
+//        usleep(1000000 / 33);
+//        XClearWindow(display, window);
+//    }
+//}
 
 void drawPixels(Display* display, int screen, std::vector<cv::Mat>& images) {
     Window window = XCreateSimpleWindow(display, RootWindow(display, screen),
-                                        0, 0, images[0].cols, images[0].rows, 0, 0, WhitePixel(display, screen));
-
+                                        0, 0, images[0].cols, images[0].rows, 0, 0, BlackPixel(display, screen));
     XMapWindow(display, window);
 
     GC gc = XCreateGC(display, window, 0, nullptr);
 
+    XSetForeground(display, gc, WhitePixel(display, screen));
+
     for (int image = 0; image < images.size(); image++) {
+
         for (int y = 0; y < images[image].rows; ++y) {
             for (int x = 0; x < images[image].cols; ++x) {
                 if (images[image].at<unsigned char>(y, x) > 0) {
@@ -27,7 +60,7 @@ void drawPixels(Display* display, int screen, std::vector<cv::Mat>& images) {
             }
         }
 
-        usleep(1000000 / 30);
+        usleep(1000000 / 32);
         XClearWindow(display, window);
     }
 }
@@ -68,7 +101,11 @@ int main() {
 
     std::cout << "Images read! Launching window..." << std::endl;
 
+    std::thread audio_thread(play_audio, "./resources/badapple.wav");
+
     drawPixels(display, screen, images);
+
+    audio_thread.join();
 
     XFlush(display);
     XCloseDisplay(display);
