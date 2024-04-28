@@ -6,6 +6,7 @@ Run Bad Apple on an X window.
 
 - OpenCV
 - Xlib
+- PulseAudio
 
 ## Usage
 
