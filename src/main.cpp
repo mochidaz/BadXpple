@@ -10,7 +10,7 @@
 #include <iostream>
 #include <vector>
 
-void drawWindows(Display* display, int screen, std::vector<cv::Mat>& images) {
+void drawPixels(Display* display, int screen, std::vector<cv::Mat>& images) {
     Window window = XCreateSimpleWindow(display, RootWindow(display, screen),
                                         0, 0, images[0].cols, images[0].rows, 0, 0, WhitePixel(display, screen));
 
@@ -68,7 +68,10 @@ int main() {
 
     std::cout << "Images read! Launching window..." << std::endl;
 
-    drawWindows(display, screen, images);
+    drawPixels(display, screen, images);
+
+    XFlush(display);
+    XCloseDisplay(display);
 
     return 0;
 }
