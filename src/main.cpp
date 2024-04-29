@@ -1,33 +1,43 @@
-#include <opencv2/opencv.hpp>
-
 #include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/extensions/shape.h>
 
-#include <unistd.h>
-#include <iomanip>
-#include <filesystem>
 #include <iostream>
 #include <vector>
 #include <thread>
 
 #include "audio.cpp"
+#include "pixmap.cpp"
 
-// Bigger scale
-//void draw_pixels(Display* display, int screen, std::vector<cv::Mat>& images) {
+//for bigger scale
+//void draw_pixels(Display* display, int screen, std::vector<bxpl::Pixmap>& images) {
+//    int screen_width = DisplayWidth(display, screen);
+//    int screen_height = DisplayHeight(display, screen);
+//
+//    int window_width = images[0].w * 2;
+//    int window_height = images[0].h * 2;
+//
+//    int x = (screen_width - window_width) / 2;
+//    int y = (screen_height - window_height) / 2;
+//
 //    Window window = XCreateSimpleWindow(display, RootWindow(display, screen),
-//                                        0, 0, images[0].cols * 2, images[0].rows * 2, 0, 0, BlackPixel(display, screen));
+//                                        x, y, window_width, window_height, 0, 0, BlackPixel(display, screen));
 //    XMapWindow(display, window);
 //
 //    GC gc = XCreateGC(display, window, 0, nullptr);
 //
+//    XSetWindowAttributes attributes;
+//    attributes.override_redirect = false;
+//    XChangeWindowAttributes(display, window, CWOverrideRedirect, &attributes);
+//
 //    XSetForeground(display, gc, WhitePixel(display, screen));
 //
-//    for (int image = 0; image < images.size(); image++) {
+//    int delayMicroseconds = 10000000 / 330;
 //
-//        for (int y = 0; y < images[image].rows; ++y) {
-//            for (int x = 0; x < images[image].cols; ++x) {
-//                if (images[image].at<unsigned char>(y, x) > 0) {
+//    for (int image = 0; image < images.size(); image++) {
+//        for (int y = 0; y < images[image].h; ++y) {
+//            for (int x = 0; x < images[image].w; ++x) {
+//                int index = y * images[image].w + x;
+//                // black pixel range is 0-127
+//                if ((images[image].data[index].r + images[image].data[index].g + images[image].data[index].b) / 3 > 127) {
 //                    XDrawPoint(display, window, gc, x * 2, y * 2);
 //                    XDrawPoint(display, window, gc, x * 2 + 1, y * 2);
 //                    XDrawPoint(display, window, gc, x * 2, y * 2 + 1);
@@ -36,31 +46,46 @@
 //            }
 //        }
 //
-//        usleep(1000000 / 33);
+//        std::this_thread::sleep_for(std::chrono::microseconds(delayMicroseconds));
 //        XClearWindow(display, window);
 //    }
 //}
 
-void draw_pixels(Display* display, int screen, std::vector<cv::Mat>& images) {
+void draw_pixels(Display* display, int screen, std::vector<bxpl::Pixmap>& images) {
+    int screen_width = DisplayWidth(display, screen);
+    int screen_height = DisplayHeight(display, screen);
+
+    int window_width = images[0].w;
+    int window_height = images[0].h;
+
+    int x = (screen_width - window_width) / 2;
+    int y = (screen_height - window_height) / 2;
+
     Window window = XCreateSimpleWindow(display, RootWindow(display, screen),
-                                        0, 0, images[0].cols, images[0].rows, 0, 0, BlackPixel(display, screen));
+                                        x, y, window_width, window_height, 0, 0, BlackPixel(display, screen));
     XMapWindow(display, window);
 
     GC gc = XCreateGC(display, window, 0, nullptr);
 
+    XSetWindowAttributes attributes;
+    attributes.override_redirect = false;
+    XChangeWindowAttributes(display, window, CWOverrideRedirect, &attributes);
+
     XSetForeground(display, gc, WhitePixel(display, screen));
 
-    for (int image = 0; image < images.size(); image++) {
+    int delay_microseconds = 10000000 / 330;
 
-        for (int y = 0; y < images[image].rows; ++y) {
-            for (int x = 0; x < images[image].cols; ++x) {
-                if (images[image].at<unsigned char>(y, x) > 0) {
+    for (int image = 0; image < images.size(); image++) {
+        for (int y = 0; y < images[image].h; ++y) {
+            for (int x = 0; x < images[image].w; ++x) {
+                // black pixel range is 0-127
+                if (images[image].at(x, y) > 127) {
                     XDrawPoint(display, window, gc, x, y);
                 }
             }
         }
 
-        usleep(1000000 / 32);
+        std::this_thread::sleep_for(std::chrono::microseconds(delay_microseconds));
         XClearWindow(display, window);
     }
 }
@@ -74,38 +99,17 @@ int main() {
 
     int screen = DefaultScreen(display);
 
-    int count = 0;
-
-    std::vector<cv::Mat> images;
+    std::vector<bxpl::Pixmap> pixmaps = bxpl::read_bin("./resources/badapple.bin");
 
     std::cout << "Reading images..." << std::endl;
-
-    std::filesystem::directory_iterator it("./badapple");
-
-    for (const auto& entry : it) {
-        count++;
-    }
-
-    for (int i = 1; i <= count; i++) {
-        std::string filename = "output_" + std::to_string(i);
-        filename = "./badapple/output_" + std::string(4 - std::to_string(i).length(), '0') + std::to_string(i) + ".png";
-        cv::Mat image = cv::imread(filename, cv::IMREAD_GRAYSCALE);
-
-        if (image.empty()) {
-            std::cerr << "Failed to read image." << std::endl;
-            return 1;
-        }
-
-        images.push_back(image);
-    }
 
     std::cout << "Images read! Launching window..." << std::endl;
 
     std::thread audio_thread(play_audio, "./resources/badapple.wav");
 
-    draw_pixels(display, screen, images);
+    draw_pixels(display, screen, pixmaps);
 
-    audio_thread.join();
+    audio_thread.native_handle();
 
     XFlush(display);
     XCloseDisplay(display);

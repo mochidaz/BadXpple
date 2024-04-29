@@ -1,6 +1,5 @@
 #include <pulse/pulseaudio.h>
 #include <iostream>
-#include <cstring>
 
 static pa_context *context = nullptr;
 static pa_stream *stream = nullptr;
